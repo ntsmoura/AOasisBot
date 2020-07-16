@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "AOasisBot"
+version = "0.1.0"
+description = ""
+authors = ["ntsmoura <natloc215@hotmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.5.3"
+"discord.py" = "^1.3.4"
+
+[tool.poetry.dev-dependencies]
+pytest = "^4.6"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
