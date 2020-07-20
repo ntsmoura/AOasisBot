@@ -1,4 +1,5 @@
-import pymongo
+#Old mongoConnection Class
+'''import pymongo
 from pymongo import MongoClient
 
 class connection:
@@ -6,4 +7,4 @@ class connection:
     def start_connection():
         c = MongoClient()
         db = c['AOasisBot']
-        return db
+        return db'''
