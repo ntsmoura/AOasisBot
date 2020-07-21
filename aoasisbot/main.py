@@ -1,9 +1,13 @@
 #Main.py
 import discord
 import json
-import requests
 from models import *
 from mongoengine import *
+from requests_futures.sessions import FuturesSession
+from parsing import *
+import requests
+
+session = FuturesSession() #Session for future requests to GW2 API
 
 client = discord.Client() #Connection do Discord Client
 
@@ -32,30 +36,36 @@ async def on_message(message):
     #Under Construction
     if message.content.startswith('$select'):
         content = message.content.split()
-        request = requests.get('https://api.guildwars2.com/v2/guild/upgrades/'+content[1])
-        up_info = json.loads(request.text)
+        request = session.get('https://api.guildwars2.com/v2/guild/upgrades/'+content[1])
+        request_result = request.result()
+        up_info = json.loads(request_result.text)
         await message.channel.send(up_info['name'])
 
     #Under Construction
-    if message.content.startswith('$upgrades'):
-        request = requests.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+acess_token)
-        upgrades = json.loads(request.text)
+    if message.content.startswith('$upgrades_update'):
+        request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+acess_token)
+        request_result = request.result()
+        upgrades = json.loads(request_result.text)
         descriptions = [] #List of elements with its description
         for e in upgrades:
-            e = str(e)
-            request = requests.get('https://api.guildwars2.com/v2/guild/upgrades/'+ e)
-            e_data = json.loads(request.text)
-            e += ' - ' + str(e_data['name'])
-            descriptions.append(e)
+            upgrade = Upgrade.objects(up_id = e).first() #
+            if upgrade is None:
+                e = str(e)
+                request = session.get('https://api.guildwars2.com/v2/guild/upgrades/'+e)
+                request_result = request.result()
+                e_data = json.loads(request_result.text)
+                upgrade = parsingJsonToMongoUpgrade(e_data)
+                upgrade.save()
+            descriptions.append(str(upgrade.up_id) + ' - ' + upgrade.name)
         await message.channel.send('``` ' + '\n'.join(descriptions) + "```")
 
     '''if message.content.startswith('$key'):
         content = message.content.split()
         author_name = message.author.name + "#" + str(message.author.discriminator)
-        user = Users.objects(name = author_name).first()
+        user = User.objects(name = author_name).first()
         #print(user)
         if user is None:
-            user = Users(name = author_name, api_key = content[1])
+            user = User(name = author_name, api_key = content[1])
             user.save()
             await message.channel.send('Api-Key successfully added!')
         else:
