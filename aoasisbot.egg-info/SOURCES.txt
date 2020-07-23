@@ -1,7 +1,0 @@
-README.rst
-setup.py
-aoasisbot/__init__.py
-aoasisbot.egg-info/PKG-INFO
-aoasisbot.egg-info/SOURCES.txt
-aoasisbot.egg-info/dependency_links.txt
-aoasisbot.egg-info/top_level.txt
