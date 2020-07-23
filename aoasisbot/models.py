@@ -15,4 +15,6 @@ class Upgrade(mongoengine.Document):
     up_id = mongoengine.IntField()
     name = mongoengine.StringField()
     icon = mongoengine.StringField()
+    owned = mongoengine.BooleanField()
     costs = mongoengine.ListField(mongoengine.EmbeddedDocumentField(Cost))
+    prerequisites = mongoengine.ListField(mongoengine.IntField())

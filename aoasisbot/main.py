@@ -21,6 +21,7 @@ bot_token = ''
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
+    getAllUpgradeData()
 
 #Read user message and send a response based on predefined commands
 @client.event
@@ -36,43 +37,53 @@ async def on_message(message):
     #Under Construction
     if message.content.startswith('$select'):
         content = message.content.split()
-        request = session.get('https://api.guildwars2.com/v2/guild/upgrades/'+content[1])
-        request_result = request.result()
-        up_info = json.loads(request_result.text)
-        await message.channel.send(up_info['name'])
+        up_info = Upgrade.objects(up_id = int(content[1])).first()
+        if up_info is None:
+            await message.channel.send('Upgrade not found!')
+        else:
+            await message.channel.send(up_info.name)
 
-    #Under Construction
+    #Upgrade DB data about earned upgrades
     if message.content.startswith('$upgrades_update'):
         request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+acess_token)
         request_result = request.result()
         upgrades = json.loads(request_result.text)
         descriptions = [] #List of elements with its description
         for e in upgrades:
-            upgrade = Upgrade.objects(up_id = e).first() #
-            if upgrade is None:
+            upgrade = Upgrade.objects(up_id = e).first() 
+            upgrade.owned = True
+            upgrade.save()
+        await message.channel.send('Upgrades successfully updated!')
+
+    #Show remaining updates based on selected type (under construction)
+    if message.content.startswith('$upgrades_remaining'):
+        type_m = (message.content.split())[1]
+        descriptions = [] #List of elements with its description
+        for e in data:
+            search = Upgrade.objects(up_id = e).first()
+            if search is None: 
                 e = str(e)
                 request = session.get('https://api.guildwars2.com/v2/guild/upgrades/'+e)
                 request_result = request.result()
                 e_data = json.loads(request_result.text)
-                upgrade = parsingJsonToMongoUpgrade(e_data)
-                upgrade.save()
-            descriptions.append(str(upgrade.up_id) + ' - ' + upgrade.name)
-        await message.channel.send('``` ' + '\n'.join(descriptions) + "```")
+                descriptions.append(str(e_data['id']) + ' - ' + e_data['name'])
 
-    '''if message.content.startswith('$key'):
-        content = message.content.split()
-        author_name = message.author.name + "#" + str(message.author.discriminator)
-        user = User.objects(name = author_name).first()
-        #print(user)
-        if user is None:
-            user = User(name = author_name, api_key = content[1])
-            user.save()
-            await message.channel.send('Api-Key successfully added!')
-        else:
-            user.api_key = content[1]
-            user.save()
-            await message.channel.send('Api-Key successfully edited!')
-        await message.delete()'''
-
+#get all data about Upgrades from GW2 API
+def getAllUpgradeData():
+    request = session.get('https://api.guildwars2.com/v2/guild/upgrades')
+    request_result = request.result()
+    data = json.loads(request_result.text)
+    descriptions = [] #List of elements with its description
+    for e in data:
+        search = Upgrade.objects(up_id = e).first()
+        if search is None: 
+            e = str(e)
+            request = session.get('https://api.guildwars2.com/v2/guild/upgrades/'+e)
+            request_result = request.result()
+            e_data = json.loads(request_result.text)
+            descriptions.append(str(e_data['id']) + ' - ' + e_data['name'])
+            upgrade = parsingJsonToMongoUpgrade(e_data,False)
+            upgrade.save()
+            print(upgrade.name)
 
 client.run(bot_token)
