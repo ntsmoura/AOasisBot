@@ -1,21 +1,24 @@
 #Main.py
 import discord
 import json
+from dotenv import load_dotenv
 from models import *
 from mongoengine import *
 from requests_futures.sessions import FuturesSession
 from parsing import *
 import requests
 
+load_dotenv()
+
 session = FuturesSession() #Session for future requests to GW2 API
 
 client = discord.Client() #Connection do Discord Client
 
-connect('AOasisBot') #Connection to mongoDB database
+connect(os.getenv("MONGO_DB")) #Connection to mongoDB database
 
-guild_id = ''
-acess_token = ''
-bot_token = ''
+guild_id = os.getenv("GUILD_ID")
+access_token = os.getenv("ACCESS_TOKEN")
+bot_token = os.getenv("BOT_TOKEN")
 
 #Debug for confirm connection to Discord client
 @client.event

@@ -2,13 +2,14 @@
 name = "AOasisBot"
 version = "0.1.0"
 description = ""
-authors = ["ntsmoura <natloc215@hotmail.com>"]
+authors = ["ntsmoura <natloc215@hotmail.com>", "pablohildo <pablohildo@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.5.3"
 "discord.py" = "^1.3.4"
 requests-futures = "^1.0.0"
 PyMongo = "^3.10.1"
+python-dotenv = "^0.14.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.6"
