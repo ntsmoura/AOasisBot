@@ -24,13 +24,14 @@ bot_token = os.getenv("BOT_TOKEN")
 skip = 0 #Global var for determine lower bound of search
 limit = 0 #Global var for determine upper bound of search
 r_upgrades_message = None #Global var which carries the last upgrades_remaining message object
+type_m = '0' #Global var for determine type of search
 
 #Debug for confirm connection to Discord client
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
-    #await channel.send("Hello everyone i'm AOasis bot, i'll be glad if can help you sometime! Type $help for more info about me!")
     getAllUpgradeData()
+    #await channel.send("Hello everyone i'm AOasis bot, i'll be glad if can help you sometime! Type $help for more info about me!")
 
 #Read user message and send a response based on predefined commands
 @client.event
@@ -38,6 +39,12 @@ async def on_message(message):
     #r_upgrades_message = None
     if message.author == client.user: #Avoid bot auto-response
         return
+
+    '''#Under Construction
+    if message.content.startswith('$teste'):
+        objeto = Upgrade.objects(prerequisites__all={58,350}).first()
+        print(objeto['name'])'''
+
 
     #Under Construction
     if message.content.startswith('$help'):
@@ -52,6 +59,23 @@ async def on_message(message):
             await message.channel.send('Upgrade not found!')
         else:
             await message.channel.send(up_info.name)
+
+    #Search for upgrades infos using its name
+    if message.content.startswith('$search'):
+        message_content = message.content.split()
+        name = ""
+        description = [] #List of elements with its description
+        for e in message_content:
+            if e!= '$search':
+                name += e + " "
+        name = name.rstrip()
+        upgrades = Upgrade.objects(name__icontains=name)
+        if upgrades is None:
+            await message.channel.send("Upgrade not found!")
+        else:
+            for x in upgrades:
+                description.append(str(x.up_id) + " - " + x.name)
+            await message.channel.send("``` " + "\n ".join(description) + "```")
 
     #Upgrade DB data about earned upgrades
     if message.content.startswith('$upgrades_update'):
@@ -69,8 +93,10 @@ async def on_message(message):
         global r_upgrades_message
         global skip
         global limit
+        global type_m
         skip = 0
         limit = 20
+        descriptions=[]
         if r_upgrades_message is not None:
             await r_upgrades_message.delete()
         try: 
@@ -78,15 +104,7 @@ async def on_message(message):
             if(type_m != '0' and type_m != '1'):
                 await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
             else:
-                descriptions = [] #List of elements with its description
-                if (type_m == '0'):
-                    upgrades_r = Upgrade.objects(owned=False)[skip:limit]
-                    for e in upgrades_r:
-                        descriptions.append(str(e.up_id) + ' - ' + e.name)
-                elif  (type_m == '1'):
-                    print("nada 1")
-                else:
-                    print("nada")
+                descriptions = upgrades_filter(type_m)
                 r_upgrades = await message.channel.send("``` " + "\n ".join(descriptions) + "```")
                 emoji_arrow_r = '\U000027A1'
                 emoji_arrow_l = '\U00002B05'
@@ -102,7 +120,7 @@ async def on_reaction_add(reaction,user):
     global r_upgrades_message
     global skip
     global limit
-    descriptions = []
+    global type_m
     if user!= client.user:
         r_upgrades_message = reaction.message
         if reaction.emoji == '➡':
@@ -113,9 +131,7 @@ async def on_reaction_add(reaction,user):
                 skip-=20
             if limit>20:
                 limit-=20
-        upgrades_r = Upgrade.objects(owned=False)[skip:limit]
-        for e in upgrades_r:
-            descriptions.append(str(e.up_id) + ' - ' + e.name)
+        descriptions = upgrades_filter(type_m)
         await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
@@ -124,7 +140,7 @@ async def on_reaction_remove(reaction,user):
     global r_upgrades_message
     global skip
     global limit
-    descriptions = []
+    global type_m
     if user!= client.user:
         r_upgrades_message = reaction.message
         if reaction.emoji == '➡':
@@ -135,9 +151,7 @@ async def on_reaction_remove(reaction,user):
                 skip-=20
             if limit>20:
                 limit-=20
-        upgrades_r = Upgrade.objects(owned=False)[skip:limit]
-        for e in upgrades_r:
-            descriptions.append(str(e.up_id) + ' - ' + e.name)
+        descriptions = upgrades_filter(type_m)
         await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
 
 #get all data about Upgrades from GW2 API
@@ -154,7 +168,23 @@ def getAllUpgradeData():
             e_data = json.loads(request_result.text)
             upgrade = parsingJsonToMongoUpgrade(e_data,False)
             upgrade.save()
-            #print(upgrade.name)
 
+
+#Filter type of upgrades query
+def upgrades_filter(type_m):
+    descriptions = [] #List of elements with its description
+    if (type_m == '0'): #If 0 search for all not owned upgrades
+        upgrades_r = Upgrade.objects(owned=False)[skip:limit]
+        for e in upgrades_r:
+            descriptions.append(str(e.up_id) + ' - ' + e.name)
+    else: #If 1 search for all not owned upgrades, which guild has the requested prerequisites
+        owned_upgrades = Upgrade.objects(owned=True)
+        itens = []
+        for x in owned_upgrades:
+            itens.append(x.up_id)
+        upgrades_r = Upgrade.objects(Q(prerequisites__all=itens) | Q(prerequisites=[]) & Q(owned=False))[skip:limit]
+        for e in upgrades_r:
+            descriptions.append(str(e.up_id) + ' - ' + e.name)
+    return descriptions
 
 client.run(bot_token)
