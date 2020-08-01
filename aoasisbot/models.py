@@ -18,3 +18,7 @@ class Upgrade(mongoengine.Document):
     owned = mongoengine.BooleanField()
     costs = mongoengine.ListField(mongoengine.EmbeddedDocumentField(Cost))
     prerequisites = mongoengine.ListField(mongoengine.IntField())
+
+class Item(mongoengine.Document):
+    item_id = mongoengine.IntField()
+    count = mongoengine.IntField()

@@ -6,6 +6,7 @@ from models import *
 from mongoengine import *
 from requests_futures.sessions import FuturesSession
 from parsing import *
+from PIL import Image
 import requests
 import os
 
@@ -48,17 +49,36 @@ async def on_message(message):
 
     #Under Construction
     if message.content.startswith('$help'):
-        await message.channel.send("```$treasury - shows all treasury items \n" + 
-        "$upgrades - shows all available upgrades\n$select [x] - shows required items for selected upgrade```")
+        await message.channel.send("```$select [x] - Select upgrade and shows needed and remaining materials qty for that one - [x] means upgrade id \n" + 
+        "$search [x] - Search for upgrades info using its name - [x] means upgrade's name \n"
+        + "$upgrades_update - Update info about owned upgrades in Database \n"
+        +"$upgrades_remaining 0 - Shows all remaining upgrades\n"
+        + "$upgrades_reamining 1 - Shows all remaining upgrades whith owned prerequisites\n"
+        + "$treasury_update - Update info about treasury in Database```")
 
-    #Under Construction
+    #Select upgrade and shows needed materials quantity for that one
     if message.content.startswith('$select'):
         content = message.content.split()
-        up_info = Upgrade.objects(up_id = int(content[1])).first()
+        up_info = None
+        try:
+            up_info = Upgrade.objects(up_id = int(content[1])).first()
+        except IndexError as error:
+            await message.channel.send('You should try select [x]!')
         if up_info is None:
             await message.channel.send('Upgrade not found!')
         else:
-            await message.channel.send(up_info.name)
+            costs = up_info.costs
+            cost_descriptions = []
+            for x in costs:
+                if x.item_id != 0 and x.item_id != 70701: #70701 is the 'Guild Favor' Id, we don't want to show that
+                    item = Item.objects(item_id = x.item_id).first()
+                    if item is None:
+                        cost_descriptions.append('0/'+ str(x.count) + ' - ' + x.name)
+                    else:
+                        cost_descriptions.append(str(item.count) + '/' + str(x.count) + ' - ' + x.name)
+            embed_message = discord.Embed(title = up_info.name,colour=3066993,description='\n'.join(cost_descriptions))
+            embed_message.set_thumbnail(url=up_info.icon)
+            await message.channel.send(embed=embed_message)
 
     #Search for upgrades infos using its name
     if message.content.startswith('$search'):
@@ -113,6 +133,18 @@ async def on_message(message):
                 r_upgrades_message = r_upgrades
         except:
             await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
+
+    #Under Construction
+    if message.content.startswith('$treasury_update'):
+        request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/treasury?access_token='+access_token)
+        request_result = request.result()
+        items = json.loads(request_result.text)
+        for e in items:
+            item = Item.objects(item_id = e['item_id']).first() 
+            if item is None:
+                db_item = Item(item_id = e['item_id'],count = e['count'])
+                db_item.save()
+        await message.channel.send('Treasury successfully updated!')
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
