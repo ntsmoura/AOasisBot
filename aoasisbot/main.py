@@ -134,7 +134,7 @@ async def on_message(message):
         except:
             await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
 
-    #Under Construction
+    #Upgrade Treasury data in DB
     if message.content.startswith('$treasury_update'):
         request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/treasury?access_token='+access_token)
         request_result = request.result()
@@ -145,6 +145,40 @@ async def on_message(message):
                 db_item = Item(item_id = e['item_id'],count = e['count'])
                 db_item.save()
         await message.channel.send('Treasury successfully updated!')
+    #Add events
+    if message.content.startswith('$event_add'):
+        event_data =  message.content.split(" / ")
+        list_participant = []
+        count = 0
+        class_c = 6
+        event_data[0] = (event_data[0].split())[1] #Remove $event_add from string
+        spots = int(event_data[3])
+        n_classes = int(event_data[5])
+        while count < spots: #Fill participants list with required roles and empty spots for replace later
+            if count == 0:
+               p_roles = ["[Running]"]
+               p = Participant(nick = event_data[4], roles = p_roles)
+            else:
+                if class_c <= n_classes + 5:
+                    p_roles = [event_data[class_c]]
+                    p = Participant(nick=" ", roles = p_roles)
+                    class_c += 1
+                else:
+                    p_roles = [" "]
+                    p = Participant(nick=" ",roles = p_roles)
+            list_participant.append(p)
+            count += 1
+        event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], 
+            spots = spots, message_id = 0, description = event_data[n_classes+6], subscribeds = list_participant)
+        descript_roles = []
+        list_count = 1
+        for x in list_participant:
+            descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles[0]) #Fill participant list for discord message content
+            list_count+=1
+        msg = await message.channel.send("Code: " + event.code + "\nName: " + event.name + "\nDescription: " + event.description + "\nDDHT: " + event.ddht + "\nSpots: " +
+            str(event.spots) + "\nLeader: " + event_data[4] + "\nRoles:\n" + "\n".join(descript_roles))
+        event.message_id = msg.id
+        event.save()
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event

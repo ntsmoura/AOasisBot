@@ -22,3 +22,16 @@ class Upgrade(mongoengine.Document):
 class Item(mongoengine.Document):
     item_id = mongoengine.IntField()
     count = mongoengine.IntField()
+
+class Participant(mongoengine.EmbeddedDocument):
+    nick = mongoengine.StringField()
+    roles = mongoengine.ListField(mongoengine.StringField())
+
+class Event(mongoengine.Document):
+    code = mongoengine.StringField()
+    name = mongoengine.StringField()
+    ddht = mongoengine.StringField()
+    spots = mongoengine.IntField()
+    message_id = mongoengine.IntField()
+    description = mongoengine.StringField()
+    subscribeds = mongoengine.ListField(mongoengine.EmbeddedDocumentField(Participant))
