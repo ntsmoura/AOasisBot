@@ -25,12 +25,13 @@ class Item(mongoengine.Document):
 
 class Participant(mongoengine.EmbeddedDocument):
     nick = mongoengine.StringField()
-    roles = mongoengine.ListField(mongoengine.StringField())
+    roles = mongoengine.StringField()
 
 class Event(mongoengine.Document):
     code = mongoengine.StringField()
     name = mongoengine.StringField()
     ddht = mongoengine.StringField()
+    active = mongoengine.BooleanField()
     spots = mongoengine.IntField()
     message_id = mongoengine.IntField()
     description = mongoengine.StringField()

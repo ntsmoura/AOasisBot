@@ -41,12 +41,6 @@ async def on_message(message):
     if message.author == client.user: #Avoid bot auto-response
         return
 
-    '''#Under Construction
-    if message.content.startswith('$teste'):
-        objeto = Upgrade.objects(prerequisites__all={58,350}).first()
-        print(objeto['name'])'''
-
-
     #Under Construction
     if message.content.startswith('$help'):
         await message.channel.send("```$select [x] - Select upgrade and shows needed and remaining materials qty for that one - [x] means upgrade id \n" + 
@@ -156,29 +150,69 @@ async def on_message(message):
         n_classes = int(event_data[5])
         while count < spots: #Fill participants list with required roles and empty spots for replace later
             if count == 0:
-               p_roles = ["[Running]"]
+               p_roles = "[Running]"
                p = Participant(nick = event_data[4], roles = p_roles)
             else:
                 if class_c <= n_classes + 5:
-                    p_roles = [event_data[class_c]]
+                    p_roles = event_data[class_c]
                     p = Participant(nick=" ", roles = p_roles)
                     class_c += 1
                 else:
-                    p_roles = [" "]
+                    p_roles = " "
                     p = Participant(nick=" ",roles = p_roles)
             list_participant.append(p)
             count += 1
-        event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], 
+        event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], active = True,
             spots = spots, message_id = 0, description = event_data[n_classes+6], subscribeds = list_participant)
         descript_roles = []
         list_count = 1
         for x in list_participant:
-            descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles[0]) #Fill participant list for discord message content
+            descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
             list_count+=1
         msg = await message.channel.send("Code: " + event.code + "\nName: " + event.name + "\nDescription: " + event.description + "\nDDHT: " + event.ddht + "\nSpots: " +
             str(event.spots) + "\nLeader: " + event_data[4] + "\nRoles:\n" + "\n".join(descript_roles))
         event.message_id = msg.id
         event.save()
+
+    #Signup Guild member in the selected event
+    if message.content.startswith('$signup'):
+        msg = message.content.split(" / ")
+        code = (msg[0].split())[1] #Remove $signup from string
+        event = Event.objects(code=code).first()
+        if event is None:
+            await message.channel.send("Event not found!")
+        else:
+            if event.subscribeds[int(msg[1])-1].nick != " ":
+                await message.channel.send("Spot Filled!")
+            else:
+                event.subscribeds[int(msg[1])-1].nick = msg[2]
+                event.subscribeds[int(msg[1])-1].roles = msg[3]
+                event.save()
+                await message.channel.send(msg[2] + "Successfully signed up in " + event.name + "!")
+            event = Event.objects(code=code).first() #Searching for updated event to edit discord message
+            list_count = 1
+            descript_roles = []
+            for x in event.subscribeds:
+                descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
+                list_count+=1
+            content = ("Code: " + event.code + "\nName: " + event.name + "\nDescription: " + event.description + "\nDDHT: " + event.ddht + "\nSpots: " +
+                    str(event.spots) + "\nLeader: " + event.subscribeds[0].nick + "\nRoles:\n" + "\n".join(descript_roles))
+            old_msg = await message.channel.fetch_message(event.message_id)
+            await old_msg.edit(content = content)
+
+    #Remove event and delete its Discord message
+    if message.content.startswith("$remove_event"):
+        code = message.content.split()[1]
+        event = Event.objects(code=code).first()
+        if event is None:
+            await message.channel.send("Event not found!")
+        else:
+            msg_id = event.message_id
+            event.delete()
+            await message.channel.send("Event deleted!")
+            old_msg = await message.channel.fetch_message(event.message_id)
+            await old_msg.delete()
+            
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
