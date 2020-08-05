@@ -41,6 +41,13 @@ async def on_message(message):
     if message.author == client.user: #Avoid bot auto-response
         return
 
+    '''if message.content.startswith('$teste'):
+        roles = message.author.roles
+        if role_search(roles):
+            print("Found!")
+        else:
+            print("Not found!")'''
+
     #Under Construction
     if message.content.startswith('$help'):
         await message.channel.send("```$select [x] - Select upgrade and shows needed and remaining materials qty for that one - [x] means upgrade id \n" + 
@@ -52,167 +59,265 @@ async def on_message(message):
 
     #Select upgrade and shows needed materials quantity for that one
     if message.content.startswith('$select'):
-        content = message.content.split()
-        up_info = None
-        try:
-            up_info = Upgrade.objects(up_id = int(content[1])).first()
-        except IndexError as error:
-            await message.channel.send('You should try select [x]!')
-        if up_info is None:
-            await message.channel.send('Upgrade not found!')
+        if role_search(message.author.roles):
+            content = message.content.split()
+            up_info = None
+            try:
+                up_info = Upgrade.objects(up_id = int(content[1])).first()
+            except IndexError as error:
+                msg = await message.channel.send('You should try select [x]!')
+                await msg.delete(delay=10)
+            if up_info is None:
+                msg = await message.channel.send('Upgrade not found!')
+                await msg.delete(delay = 10)
+            else:
+                costs = up_info.costs
+                cost_descriptions = []
+                for x in costs:
+                    if x.item_id != 0 and x.item_id != 70701: #70701 is the 'Guild Favor' Id, we don't want to show that
+                        item = Item.objects(item_id = x.item_id).first()
+                        if item is None:
+                            cost_descriptions.append('0/'+ str(x.count) + ' - ' + x.name)
+                        else:
+                            cost_descriptions.append(str(item.count) + '/' + str(x.count) + ' - ' + x.name)
+                embed_message = discord.Embed(title = up_info.name,colour=3066993,description='\n'.join(cost_descriptions))
+                embed_message.set_thumbnail(url=up_info.icon)
+                await message.channel.send(embed=embed_message)
         else:
-            costs = up_info.costs
-            cost_descriptions = []
-            for x in costs:
-                if x.item_id != 0 and x.item_id != 70701: #70701 is the 'Guild Favor' Id, we don't want to show that
-                    item = Item.objects(item_id = x.item_id).first()
-                    if item is None:
-                        cost_descriptions.append('0/'+ str(x.count) + ' - ' + x.name)
-                    else:
-                        cost_descriptions.append(str(item.count) + '/' + str(x.count) + ' - ' + x.name)
-            embed_message = discord.Embed(title = up_info.name,colour=3066993,description='\n'.join(cost_descriptions))
-            embed_message.set_thumbnail(url=up_info.icon)
-            await message.channel.send(embed=embed_message)
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay=10)
 
     #Search for upgrades infos using its name
     if message.content.startswith('$search'):
-        message_content = message.content.split()
-        name = ""
-        description = [] #List of elements with its description
-        for e in message_content:
-            if e!= '$search':
-                name += e + " "
-        name = name.rstrip()
-        upgrades = Upgrade.objects(name__icontains=name)
-        if upgrades is None:
-            await message.channel.send("Upgrade not found!")
+        if role_search(message.author.roles):
+            message_content = message.content.split()
+            name = ""
+            description = [] #List of elements with its description
+            for e in message_content:
+                if e!= '$search':
+                    name += e + " "
+            name = name.rstrip()
+            upgrades = Upgrade.objects(name__icontains=name)
+            if upgrades is None:
+                msg = await message.channel.send("Upgrade not found!")
+                await msg.delete(delay=10)
+            else:
+                try:
+                    for x in upgrades:
+                        description.append(str(x.up_id) + " - " + x.name)
+                    await message.channel.send("``` " + "\n ".join(description) + "```")
+                except:
+                    msg = await message.channel.send("A lot of results, please be more precise.")
+                    await msg.delete(delay = 10)
         else:
-            for x in upgrades:
-                description.append(str(x.up_id) + " - " + x.name)
-            await message.channel.send("``` " + "\n ".join(description) + "```")
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay=10)
 
     #Upgrade DB data about earned upgrades
     if message.content.startswith('$upgrades_update'):
-        request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+access_token)
-        request_result = request.result()
-        upgrades = json.loads(request_result.text)
-        for e in upgrades:
-            upgrade = Upgrade.objects(up_id = e).first() 
-            upgrade.owned = True
-            upgrade.save()
-        await message.channel.send('Upgrades successfully updated!')
+        if role_search(message.author.roles):
+            request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+access_token)
+            request_result = request.result()
+            upgrades = json.loads(request_result.text)
+            for e in upgrades:
+                upgrade = Upgrade.objects(up_id = e).first() 
+                upgrade.owned = True
+                upgrade.save()
+            msg = await message.channel.send('Upgrades successfully updated!')
+            await msg.delete(delay=10)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay=10)
 
     #Show remaining updates based on selected type (0 - All Remaining Upgrades / 1 - Remaining Upgrades with owned prerequisites)
     if message.content.startswith('$upgrades_remaining'):
-        global r_upgrades_message
-        global skip
-        global limit
-        global type_m
-        skip = 0
-        limit = 20
-        descriptions=[]
-        if r_upgrades_message is not None:
-            await r_upgrades_message.delete()
-        try: 
-            type_m = (message.content.split())[1]
-            if(type_m != '0' and type_m != '1'):
-                await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
-            else:
-                descriptions = upgrades_filter(type_m)
-                r_upgrades = await message.channel.send("``` " + "\n ".join(descriptions) + "```")
-                emoji_arrow_r = '\U000027A1'
-                emoji_arrow_l = '\U00002B05'
-                await r_upgrades.add_reaction(emoji_arrow_l)
-                await r_upgrades.add_reaction(emoji_arrow_r)
-                r_upgrades_message = r_upgrades
-        except:
-            await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
+        if role_search(message.author.roles):
+            global r_upgrades_message
+            global skip
+            global limit
+            global type_m
+            skip = 0
+            limit = 20
+            descriptions=[]
+            if r_upgrades_message is not None:
+                await r_upgrades_message.delete()
+            try: 
+                type_m = (message.content.split())[1]
+                if(type_m != '0' and type_m != '1'):
+                    msg = await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
+                    await msg.delete(delay=10)
+                else:
+                    descriptions = upgrades_filter(type_m)
+                    r_upgrades = await message.channel.send("``` " + "\n ".join(descriptions) + "```")
+                    emoji_arrow_r = '\U000027A1'
+                    emoji_arrow_l = '\U00002B05'
+                    await r_upgrades.add_reaction(emoji_arrow_l)
+                    await r_upgrades.add_reaction(emoji_arrow_r)
+                    r_upgrades_message = r_upgrades
+            except:
+                msg = await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
+                msg.delete(delay=10)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay=10)
 
     #Upgrade Treasury data in DB
     if message.content.startswith('$treasury_update'):
-        request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/treasury?access_token='+access_token)
-        request_result = request.result()
-        items = json.loads(request_result.text)
-        for e in items:
-            item = Item.objects(item_id = e['item_id']).first() 
-            if item is None:
-                db_item = Item(item_id = e['item_id'],count = e['count'])
-                db_item.save()
-        await message.channel.send('Treasury successfully updated!')
+        if role_search(message.author.roles):
+            request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/treasury?access_token='+access_token)
+            request_result = request.result()
+            items = json.loads(request_result.text)
+            for e in items:
+                item = Item.objects(item_id = e['item_id']).first() 
+                if item is None:
+                    db_item = Item(item_id = e['item_id'],count = e['count'])
+                    db_item.save()
+            msg = await message.channel.send('Treasury successfully updated!')
+            await msg.delete(delay=10)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay=10)
+
     #Add events
     if message.content.startswith('$event_add'):
-        event_data =  message.content.split(" / ")
-        list_participant = []
-        count = 0
-        class_c = 6
-        event_data[0] = (event_data[0].split())[1] #Remove $event_add from string
-        spots = int(event_data[3])
-        n_classes = int(event_data[5])
-        while count < spots: #Fill participants list with required roles and empty spots for replace later
-            if count == 0:
-               p_roles = "[Running]"
-               p = Participant(nick = event_data[4], roles = p_roles)
+        if role_search(message.author.roles):
+            event_data =  message.content.split(" / ")
+            list_participant = []
+            count = 0
+            class_c = 6
+            event_data[0] = (event_data[0].split())[1] #Remove $event_add from string
+            if Event.objects(code = event_data[0]).first() is None:
+                spots = int(event_data[3])
+                n_classes = int(event_data[5])
+                while count < spots: #Fill participants list with required roles and empty spots for replace later
+                    if count == 0:
+                        p_roles = "[Running]"
+                        p = Participant(nick = event_data[4], roles = p_roles)
+                    else:
+                        if class_c <= n_classes + 5:
+                            p_roles = event_data[class_c]
+                            p = Participant(nick=" ", roles = p_roles)
+                            class_c += 1
+                        else:
+                            p_roles = " "
+                            p = Participant(nick=" ",roles = p_roles)
+                    list_participant.append(p)
+                    count += 1
+                event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], active = True,
+                    spots = spots, message_id = 0, description = event_data[n_classes+6], subscribeds = list_participant)
+                descript_roles = []
+                list_count = 1
+                for x in list_participant:
+                    descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
+                    list_count+=1
+                msg = await message.channel.send(parsingEventoToEventMessage(event,descript_roles))
+                event.message_id = msg.id
+                event.save()
             else:
-                if class_c <= n_classes + 5:
-                    p_roles = event_data[class_c]
-                    p = Participant(nick=" ", roles = p_roles)
-                    class_c += 1
-                else:
-                    p_roles = " "
-                    p = Participant(nick=" ",roles = p_roles)
-            list_participant.append(p)
-            count += 1
-        event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], active = True,
-            spots = spots, message_id = 0, description = event_data[n_classes+6], subscribeds = list_participant)
-        descript_roles = []
-        list_count = 1
-        for x in list_participant:
-            descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
-            list_count+=1
-        msg = await message.channel.send("Code: " + event.code + "\nName: " + event.name + "\nDescription: " + event.description + "\nDDHT: " + event.ddht + "\nSpots: " +
-            str(event.spots) + "\nLeader: " + event_data[4] + "\nRoles:\n" + "\n".join(descript_roles))
-        event.message_id = msg.id
-        event.save()
+                msg = await message.channel.send("Event code already used. Try another code!")
+                await msg.delete(delay=10)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay=10)
 
     #Signup Guild member in the selected event
     if message.content.startswith('$signup'):
-        msg = message.content.split(" / ")
-        code = (msg[0].split())[1] #Remove $signup from string
-        event = Event.objects(code=code).first()
-        if event is None:
-            await message.channel.send("Event not found!")
-        else:
-            if event.subscribeds[int(msg[1])-1].nick != " ":
-                await message.channel.send("Spot Filled!")
+        try:
+            msg = message.content.split("/")
+            code = (msg[0].split())[1] #Remove $signup from string
+            event = Event.objects(code=code).first()
+            if event is None:
+                await message.channel.send("Event not found!")
             else:
-                event.subscribeds[int(msg[1])-1].nick = msg[2]
-                event.subscribeds[int(msg[1])-1].roles = msg[3]
-                event.save()
-                await message.channel.send(msg[2] + "Successfully signed up in " + event.name + "!")
-            event = Event.objects(code=code).first() #Searching for updated event to edit discord message
-            list_count = 1
-            descript_roles = []
-            for x in event.subscribeds:
-                descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
-                list_count+=1
-            content = ("Code: " + event.code + "\nName: " + event.name + "\nDescription: " + event.description + "\nDDHT: " + event.ddht + "\nSpots: " +
-                    str(event.spots) + "\nLeader: " + event.subscribeds[0].nick + "\nRoles:\n" + "\n".join(descript_roles))
-            old_msg = await message.channel.fetch_message(event.message_id)
-            await old_msg.edit(content = content)
+                if event.subscribeds[int(msg[1])-1].nick != " ":
+                    filled_msg = await message.channel.send("Spot Filled!")
+                    await filled_msg.delete(delay = 10)
+                else:
+                    event.subscribeds[int(msg[1])-1].nick = msg[2]
+                    event.subscribeds[int(msg[1])-1].roles = msg[3]
+                    event.save()
+                    success_msg = await message.channel.send(msg[2] + "Successfully signed up in " + event.name + "!")
+                event = Event.objects(code=code).first() #Searching for updated event to edit discord message
+                list_count = 1
+                descript_roles = []
+                for x in event.subscribeds:
+                    descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
+                    list_count+=1
+                content = parsingEventoToEventMessage(event,descript_roles)
+                old_msg = await message.channel.fetch_message(event.message_id)
+                await old_msg.edit(content = content)
+                try:
+                    await success_msg.delete(delay = 10)
+                except:
+                    pass
+        except IndexError:
+            msg = await message.channel.send("Wrong command format. Type $event_help for help.")
+            await msg.delete(delay=10)
+        await message.delete(delay = 10)  
 
     #Remove event and delete its Discord message
     if message.content.startswith("$remove_event"):
-        code = message.content.split()[1]
-        event = Event.objects(code=code).first()
-        if event is None:
-            await message.channel.send("Event not found!")
+        if role_search(message.author.roles):
+            code = message.content.split()[1]
+            event = Event.objects(code=code).first()
+            if event is None:
+                nfound_msg = await message.channel.send("Event not found!")
+                await nfound_msg.delete(delay = 10)
+            else:
+                msg_id = event.message_id
+                event.delete()
+                deleted_msg = await message.channel.send("Event deleted!")
+                old_msg = await message.channel.fetch_message(event.message_id)
+                await old_msg.delete()
+                await deleted_msg.delete(delay = 10)
         else:
-            msg_id = event.message_id
-            event.delete()
-            await message.channel.send("Event deleted!")
-            old_msg = await message.channel.fetch_message(event.message_id)
-            await old_msg.delete()
-            
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)  
+        await message.delete(delay = 10) 
+    
+    #Remove user from any event
+    if message.content.startswith("$remove_user"):
+        if role_search(message.author.roles):
+            splited_message = message.content.split()
+            try:
+                code = splited_message[1]
+                position = int(splited_message[2])
+                event = Event.objects(code=code).first()
+                if event is None:
+                    nfound_msg = await message.channel.send("Event not found!")
+                    await nfound_msg.delete(delay = 10)
+                elif (position > event.spots or position < 1):
+                    nfound_msg = await message.channel.send("Position not found!")
+                    await nfound_msg.delete(delay = 10)
+                else:
+                    event.subscribeds[position-1].nick = " "
+                    try:
+                        event.subscribeds[position-1].roles = splited_message[3]
+                    except IndexError:
+                        event.subscribeds[position-1].roles = " "
+                    event.save()
+                    event = Event.objects(code=code).first() #Searching for updated event to edit discord message
+                    list_count = 1
+                    descript_roles = []
+                    for x in event.subscribeds:
+                        descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
+                        list_count+=1
+                    content = parsingEventoToEventMessage(event,descript_roles)
+                    old_msg = await message.channel.fetch_message(event.message_id)
+                    await old_msg.edit(content = content)
+            except IndexError:
+                msg = await message.channel.send("Wrong command format. Type $event_help for help.")
+                await msg.delete(delay=10)  
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)  
+        await message.delete(delay = 10) 
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
@@ -287,4 +392,10 @@ def upgrades_filter(type_m):
             descriptions.append(str(e.up_id) + ' - ' + e.name)
     return descriptions
 
+#Search for required roles
+def role_search(roles):
+    for x in roles:
+        if (x.name == "Ascended" or x.name == "Exalted"):
+            return True
+    return False
 client.run(bot_token)
