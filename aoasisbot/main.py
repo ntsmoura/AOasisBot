@@ -31,7 +31,7 @@ type_m = '0' #Global var for determine type of search
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
-    getAllUpgradeData()
+    get_upgrade_data()
     #await channel.send("Hello everyone i'm AOasis bot, i'll be glad if can help you sometime! Type $help for more info about me!")
 
 #Read user message and send a response based on predefined commands
@@ -48,15 +48,37 @@ async def on_message(message):
         else:
             print("Not found!")'''
 
-    #Under Construction
-    if message.content.startswith('$help'):
-        await message.channel.send("```$select [x] - Select upgrade and shows needed and remaining materials qty for that one - [x] means upgrade id \n" + 
-        "$search [x] - Search for upgrades info using its name - [x] means upgrade's name \n"
+    #Show help about upgrades
+    if message.content.startswith('$upgrades_help'):
+        await message.channel.send("```$select ID - Select upgrade and shows needed and remaining materials qty for that one\n" 
+        + "______________________________________________________________________\n"
+        + "$search NAME - Search for upgrades info using its name\n"
+        + "______________________________________________________________________\n"
         + "$upgrades_update - Update info about owned upgrades in Database \n"
+        + "______________________________________________________________________\n"
         +"$upgrades_remaining 0 - Shows all remaining upgrades\n"
         + "$upgrades_reamining 1 - Shows all remaining upgrades whith owned prerequisites\n"
+        + "______________________________________________________________________\n"
         + "$treasury_update - Update info about treasury in Database```")
 
+    #Show help about events
+    if message.content.startswith('$event_help'):
+        await message.channel.send("```\n"
+        + "PS: THE SPACES BETWEEN '/' ARE CRUCIAL, PLEASE TAKE CARE!\n"
+        + "______________________________________________________________________\n"
+        + "$event_add - Add and open event for signup. \n" 
+        + "FORMAT: $event_add CODE / TITLE / DATE TIME / SPOTS / @Leader | INGAME NAME | / QNT OF NEEDED ROLES / NEEDED ROLE 1 / NEEDED ROLE 2 / ... / NEEDED ROLE X / DESCRIPTION \n" 
+        + "______________________________________________________________________\n"
+        + "$signup - signup user in an event\n" 
+        + "FORMAT: $signup CODE / SPOT POSITION / @you | IGN NAME | / ROLES\n" 
+        + "EXAMPLE: $signup RD1 / 2 / @AOasis Bot |GoodMan.6207| / [1. HealBrand] [2.Power Banner] \n" 
+        + "______________________________________________________________________\n"
+        + "$remove_user CODE SPOT  - remove selected user from event list\n" 
+        + "$remove_event CODE - remove selected event\n" 
+        + "______________________________________________________________________\n"
+        + "$edit_event - edit event name, date time or description.\n" 
+        + "FORMAT: $edit_event CODE / TYPE / CONTENT\nTYPES : 1 - Name ; 2 - Date Time ; 3 - Description ```")
+        
     #Select upgrade and shows needed materials quantity for that one
     if message.content.startswith('$select'):
         if role_search(message.author.roles):
@@ -65,7 +87,7 @@ async def on_message(message):
             try:
                 up_info = Upgrade.objects(up_id = int(content[1])).first()
             except IndexError as error:
-                msg = await message.channel.send('You should try select [x]!')
+                msg = await message.channel.send('You should try select ID!')
                 await msg.delete(delay=10)
             if up_info is None:
                 msg = await message.channel.send('Upgrade not found!')
@@ -113,7 +135,6 @@ async def on_message(message):
         else:
             msg = await message.channel.send("You don't have the required role for this command! Sorry.")
             await msg.delete(delay=10)
-        await message.delete(delay=10)
 
     #Upgrade DB data about earned upgrades
     if message.content.startswith('$upgrades_update'):
@@ -185,86 +206,87 @@ async def on_message(message):
 
     #Add events
     if message.content.startswith('$event_add'):
-        if role_search(message.author.roles):
-            event_data =  message.content.split(" / ")
-            list_participant = []
-            count = 0
-            class_c = 6
-            event_data[0] = (event_data[0].split())[1] #Remove $event_add from string
-            if Event.objects(code = event_data[0]).first() is None:
-                spots = int(event_data[3])
-                n_classes = int(event_data[5])
-                while count < spots: #Fill participants list with required roles and empty spots for replace later
-                    if count == 0:
-                        p_roles = "[Running]"
-                        p = Participant(nick = event_data[4], roles = p_roles)
-                    else:
-                        if class_c <= n_classes + 5:
-                            p_roles = event_data[class_c]
-                            p = Participant(nick=" ", roles = p_roles)
-                            class_c += 1
+        try:
+            if role_search(message.author.roles):
+                event_data =  message.content.split(" / ")
+                list_participant = []
+                count = 0
+                class_c = 6
+                event_data[0] = (event_data[0].split())[1] #Remove $event_add from string
+                if Event.objects(code = event_data[0]).first() is None:
+                    spots = int(event_data[3])
+                    n_classes = int(event_data[5])
+                    while count < spots: #Fill participants list with required roles and empty spots for replace later
+                        if count == 0:
+                            p_roles = "[Running]"
+                            p = Participant(nick = event_data[4], roles = p_roles)
                         else:
-                            p_roles = " "
-                            p = Participant(nick=" ",roles = p_roles)
-                    list_participant.append(p)
-                    count += 1
-                event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], active = True,
-                    spots = spots, message_id = 0, description = event_data[n_classes+6], subscribeds = list_participant)
-                descript_roles = []
-                list_count = 1
-                for x in list_participant:
-                    descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
-                    list_count+=1
-                msg = await message.channel.send(parsingEventoToEventMessage(event,descript_roles))
-                event.message_id = msg.id
-                event.save()
+                            if class_c <= n_classes + 5:
+                                p_roles = event_data[class_c]
+                                p = Participant(nick=" ", roles = p_roles)
+                                class_c += 1
+                            else:
+                                p_roles = " "
+                                p = Participant(nick=" ",roles = p_roles)
+                        list_participant.append(p)
+                        count += 1
+                    event = Event(code = event_data[0], name = event_data[1], ddht = event_data[2], active = True,
+                        spots = spots, message_id = 0, description = event_data[n_classes+6], subscribeds = list_participant)
+                    descript_roles = []
+                    list_count = 1
+                    descript_roles = create_spot_list(event)
+                    msg = await message.channel.send(parsingEventToEventMessage(event,descript_roles))
+                    event.message_id = msg.id
+                    event.save()
+                else:
+                    msg = await message.channel.send("Event code already used. Try another code!")
+                    await msg.delete(delay=10)
             else:
-                msg = await message.channel.send("Event code already used. Try another code!")
+                msg = await message.channel.send("You don't have the required role for this command! Sorry.")
                 await msg.delete(delay=10)
-        else:
-            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+        except (IndexError, ValueError, TypeError):
+            msg = await message.channel.send("Wrong command format. Type $event_help for help.")
             await msg.delete(delay=10)
-        await message.delete(delay=10)
+        await message.delete(delay = 10) 
 
     #Signup Guild member in the selected event
     if message.content.startswith('$signup'):
         try:
-            msg = message.content.split("/")
+            msg = message.content.split(" / ")
             code = (msg[0].split())[1] #Remove $signup from string
             event = Event.objects(code=code).first()
             if event is None:
                 await message.channel.send("Event not found!")
             else:
                 if event.subscribeds[int(msg[1])-1].nick != " ":
-                    filled_msg = await message.channel.send("Spot Filled!")
+                    filled_msg = await message.channel.send(message.author.mention + " Spot Filled!")
                     await filled_msg.delete(delay = 10)
                 else:
                     event.subscribeds[int(msg[1])-1].nick = msg[2]
                     event.subscribeds[int(msg[1])-1].roles = msg[3]
                     event.save()
-                    success_msg = await message.channel.send(msg[2] + "Successfully signed up in " + event.name + "!")
+                    success_msg = await message.channel.send(message.author.mention + " Successful subscription: " + event.name + "!")
                 event = Event.objects(code=code).first() #Searching for updated event to edit discord message
-                list_count = 1
-                descript_roles = []
-                for x in event.subscribeds:
-                    descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
-                    list_count+=1
-                content = parsingEventoToEventMessage(event,descript_roles)
+                descript_roles = create_spot_list(event)
+                content = parsingEventToEventMessage(event,descript_roles)
                 old_msg = await message.channel.fetch_message(event.message_id)
                 await old_msg.edit(content = content)
                 try:
                     await success_msg.delete(delay = 10)
                 except:
                     pass
-        except IndexError:
-            msg = await message.channel.send("Wrong command format. Type $event_help for help.")
+        except (IndexError, ValueError, TypeError):
+            msg = await message.channel.send(message.author.mention + " Wrong command format. Type $event_help for help.")
             await msg.delete(delay=10)
         await message.delete(delay = 10)  
 
     #Remove event and delete its Discord message
     if message.content.startswith("$remove_event"):
         if role_search(message.author.roles):
-            code = message.content.split()[1]
+            try:
+                code = message.content.split()[1]
+            except IndexError:
+                code = ""
             event = Event.objects(code=code).first()
             if event is None:
                 nfound_msg = await message.channel.send("Event not found!")
@@ -303,21 +325,54 @@ async def on_message(message):
                         event.subscribeds[position-1].roles = " "
                     event.save()
                     event = Event.objects(code=code).first() #Searching for updated event to edit discord message
-                    list_count = 1
-                    descript_roles = []
-                    for x in event.subscribeds:
-                        descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
-                        list_count+=1
-                    content = parsingEventoToEventMessage(event,descript_roles)
+                    descript_roles = create_spot_list(event)
+                    content = parsingEventToEventMessage(event,descript_roles)
                     old_msg = await message.channel.fetch_message(event.message_id)
                     await old_msg.edit(content = content)
-            except IndexError:
+            except (IndexError, ValueError, TypeError):
                 msg = await message.channel.send("Wrong command format. Type $event_help for help.")
                 await msg.delete(delay=10)  
         else:
             msg = await message.channel.send("You don't have the required role for this command! Sorry.")
             await msg.delete(delay=10)  
+        await message.delete(delay = 10)
+
+    #Edit selected content of event (Name, Description, Date/Time)
+    if message.content.startswith('$edit_event'):
+        try:
+            msg = message.content.split(" / ")
+            code = (msg[0].split())[1] #Remove $edit_event from string
+            edit_type = msg[1].strip()
+            edit_content = msg[2]
+            event = Event.objects(code=code).first()
+            if event is None:
+                nfound_msg = await message.channel.send("Event not found!")
+                await nfound_msg.delete(delay=10)
+            else:
+                if edit_type == "1":
+                    event.name = edit_content
+                elif edit_type == "2":
+                    event.ddht = edit_content
+                elif edit_type == "3":
+                    event.description = edit_content
+                else:
+                    msg = await message.channel.send("Type not found! Try 1 - Name / 2 - Date|Time / 3 - Description.")
+                    await msg.delete(delay=10)
+                    return
+                event.save() 
+                event = Event.objects(code=code).first() #Searching for updated event to edit discord message
+                descript_roles = create_spot_list(event)
+                content = parsingEventToEventMessage(event,descript_roles)
+                old_msg = await message.channel.fetch_message(event.message_id)
+                await old_msg.edit(content = content)
+                success_msg = await message.channel.send("Event successfully edited!") 
+                await success_msg.delete(delay = 10)
+        except (IndexError, ValueError, TypeError):
+            msg = await message.channel.send("Wrong command format. Type $event_help for help.")
+            await msg.delete(delay=10)
         await message.delete(delay = 10) 
+        
+         
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
@@ -360,7 +415,7 @@ async def on_reaction_remove(reaction,user):
         await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
 
 #get all data about Upgrades from GW2 API
-def getAllUpgradeData():
+def get_upgrade_data():
     request = session.get('https://api.guildwars2.com/v2/guild/upgrades')
     request_result = request.result()
     data = json.loads(request_result.text)
@@ -395,7 +450,18 @@ def upgrades_filter(type_m):
 #Search for required roles
 def role_search(roles):
     for x in roles:
-        if (x.name == "Ascended" or x.name == "Exalted"):
+        if x.name == "Exalted":
             return True
     return False
+
+
+#Get list of spots from event
+def create_spot_list(event):
+    list_count = 1
+    descript_roles = []
+    for x in event.subscribeds:
+        descript_roles.append(str(list_count) + " - " + x.nick + " " + x.roles) #Fill participant list for discord message content
+        list_count+=1
+    return descript_roles
+
 client.run(bot_token)

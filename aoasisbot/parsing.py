@@ -24,7 +24,7 @@ def parsingJsonToMongoUpgrade(data,owned):
     upgrade_object = Upgrade(up_id = data['id'], name = data['name'], icon = data['icon'], costs = list_of_costs, owned = owned, prerequisites = data['prerequisites']) 
     return upgrade_object
 
-def parsingEventoToEventMessage(event, descript_roles):
+def parsingEventToEventMessage(event, descript_roles):
     count = 0
     emoji = ""
     spots_message = ""
