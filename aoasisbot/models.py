@@ -36,3 +36,6 @@ class Event(mongoengine.Document):
     message_id = mongoengine.IntField()
     description = mongoengine.StringField()
     subscribeds = mongoengine.ListField(mongoengine.EmbeddedDocumentField(Participant))
+
+class Joke(mongoengine.Document):
+    descript = mongoengine.StringField()

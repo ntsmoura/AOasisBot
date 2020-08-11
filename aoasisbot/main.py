@@ -9,6 +9,7 @@ from parsing import *
 from PIL import Image
 import requests
 import os
+import random
 
 load_dotenv()
 
@@ -339,38 +340,72 @@ async def on_message(message):
 
     #Edit selected content of event (Name, Description, Date/Time)
     if message.content.startswith('$edit_event'):
-        try:
-            msg = message.content.split(" / ")
-            code = (msg[0].split())[1] #Remove $edit_event from string
-            edit_type = msg[1].strip()
-            edit_content = msg[2]
-            event = Event.objects(code=code).first()
-            if event is None:
-                nfound_msg = await message.channel.send("Event not found!")
-                await nfound_msg.delete(delay=10)
-            else:
-                if edit_type == "1":
-                    event.name = edit_content
-                elif edit_type == "2":
-                    event.ddht = edit_content
-                elif edit_type == "3":
-                    event.description = edit_content
+        if role_search(message.author.roles):
+            try:
+                msg = message.content.split(" / ")
+                code = (msg[0].split())[1] #Remove $edit_event from string
+                edit_type = msg[1].strip()
+                edit_content = msg[2]
+                event = Event.objects(code=code).first()
+                if event is None:
+                    nfound_msg = await message.channel.send("Event not found!")
+                    await nfound_msg.delete(delay=10)
                 else:
-                    msg = await message.channel.send("Type not found! Try 1 - Name / 2 - Date|Time / 3 - Description.")
-                    await msg.delete(delay=10)
-                    return
-                event.save() 
-                event = Event.objects(code=code).first() #Searching for updated event to edit discord message
-                descript_roles = create_spot_list(event)
-                content = parsingEventToEventMessage(event,descript_roles)
-                old_msg = await message.channel.fetch_message(event.message_id)
-                await old_msg.edit(content = content)
-                success_msg = await message.channel.send("Event successfully edited!") 
-                await success_msg.delete(delay = 10)
-        except (IndexError, ValueError, TypeError):
-            msg = await message.channel.send("Wrong command format. Type $event_help for help.")
-            await msg.delete(delay=10)
-        await message.delete(delay = 10) 
+                    if edit_type == "1":
+                        event.name = edit_content
+                    elif edit_type == "2":
+                        event.ddht = edit_content
+                    elif edit_type == "3":
+                        event.description = edit_content
+                    else:
+                        msg = await message.channel.send("Type not found! Try 1 - Name / 2 - Date|Time / 3 - Description.")
+                        await msg.delete(delay=10)
+                        return
+                    event.save() 
+                    event = Event.objects(code=code).first() #Searching for updated event to edit discord message
+                    descript_roles = create_spot_list(event)
+                    content = parsingEventToEventMessage(event,descript_roles)
+                    old_msg = await message.channel.fetch_message(event.message_id)
+                    await old_msg.edit(content = content)
+                    success_msg = await message.channel.send("Event successfully edited!") 
+                    await success_msg.delete(delay = 10)
+            except (IndexError, ValueError, TypeError):
+                msg = await message.channel.send("Wrong command format. Type $event_help for help.")
+                await msg.delete(delay=10)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)  
+        await message.delete(delay = 10)
+
+    #Add Joke
+    if message.content.startswith('$joke_add'):
+        if role_search_jokes(message.author.roles):
+                msg = message.content[9:]
+                joke = Joke(descript = msg)
+                joke.save()
+                bot_msg = await message.channel.send("Joke added!")
+                await bot_msg.delete(delay=10)  
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)  
+        await message.delete(delay = 10)
+
+    #Retrieve joke
+    if message.content == '$joke':
+        if role_search_jokes(message.author.roles):
+            await message.delete() 
+            jokes = Joke.objects()
+            if len(jokes) == 0:
+                msg = await message.channel.send("No jokes available!")
+                await msg.delete(delay=10)   
+            else:
+                up_cap = len(jokes) - 1
+                if up_cap < 0: 
+                    up_cap = 0
+                await message.channel.send(jokes[random.randint(0,up_cap)].descript)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)   
         
          
 
@@ -451,6 +486,13 @@ def upgrades_filter(type_m):
 def role_search(roles):
     for x in roles:
         if x.name == "Exalted":
+            return True
+    return False
+
+#Search for required roles
+def role_search_jokes(roles):
+    for x in roles:
+        if x.name == "Exalted" or x.name=="Ascended":
             return True
     return False
 
