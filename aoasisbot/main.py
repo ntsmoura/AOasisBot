@@ -27,6 +27,7 @@ skip = 0 #Global var for determine lower bound of search
 limit = 0 #Global var for determine upper bound of search
 r_upgrades_message = None #Global var which carries the last upgrades_remaining message object
 type_m = '0' #Global var for determine type of search
+channel_id = None  #Global var for application for guild invite channel id
 
 #Debug for confirm connection to Discord client
 @client.event
@@ -405,9 +406,46 @@ async def on_message(message):
                 await message.channel.send(jokes[random.randint(0,up_cap)].descript)
         else:
             msg = await message.channel.send("You don't have the required role for this command! Sorry.")
-            await msg.delete(delay=10)   
-        
-         
+            await msg.delete(delay=10) 
+
+    #Setting the Channel for Application Answers
+    if message.content.startswith('$set_apply_channel'):
+        if role_search_jokes(message.author.roles):
+            try:
+                global channel_id 
+                channel_id = message.content.split()[1].strip("<#>")
+                ok_msg = await message.channel.send("Channel setted!")
+                await ok_msg.delete(delay=10)
+            except IndexError:
+                error_msg = await message.channel.send("Wrong command format! Try $set_apply_channel #CHANNEL")
+                await error_msg.delete(delay=10)
+        else:
+            msg = await message.channel.send("You don't have the required role for this command! Sorry.")
+            await msg.delete(delay=10)
+        await message.delete(delay = 10)
+
+    #Setting the Channel for Application Answers
+    if message.content.startswith('$apply'):
+        try:
+            msg = message.content.split(" / ")
+            username = (msg[0].split())[1]
+            meta = msg[1]
+            why = msg[2]
+            commander_tag = msg[3]
+            channel = client.get_channel(int(channel_id))
+
+            try:
+                await channel.send("``` USERNAME: " + username + " \n Meta: " + meta + "\n Why? " + why
+                + "\n Commander Tag: " + commander_tag + "```")
+                success_msg = await message.channel.send(message.author.mention + "Application received! Please allow 4-6 hours for a reply.")
+                await success_msg.delete(delay=10)
+            except:
+                error_msg = await message.channel.send("Not working right now, please try again later.")
+                await error_msg.delete(delay=10)
+        except IndexError:
+            error_msg = await message.channel.send("Wrong command format! Try again.")
+            await error_msg.delete(delay=10)
+        await message.delete(delay = 10)
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
