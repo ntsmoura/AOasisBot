@@ -95,18 +95,22 @@ async def on_message(message):
                 msg = await message.channel.send('Upgrade not found!')
                 await msg.delete(delay = 10)
             else:
-                costs = up_info.costs
-                cost_descriptions = []
-                for x in costs:
-                    if x.item_id != 0 and x.item_id != 70701: #70701 is the 'Guild Favor' Id, we don't want to show that
-                        item = Item.objects(item_id = x.item_id).first()
-                        if item is None:
-                            cost_descriptions.append('0/'+ str(x.count) + ' - ' + x.name)
-                        else:
-                            cost_descriptions.append(str(item.count) + '/' + str(x.count) + ' - ' + x.name)
-                embed_message = discord.Embed(title = up_info.name,colour=3066993,description='\n'.join(cost_descriptions))
-                embed_message.set_thumbnail(url=up_info.icon)
-                await message.channel.send(embed=embed_message)
+                if(up_info.owned):
+                    msg = await message.channel.send("We already have this one!")
+                    await msg.delete(delay=10)
+                else:
+                    costs = up_info.costs
+                    cost_descriptions = []
+                    for x in costs:
+                        if x.item_id != 0 and x.item_id != 70701: #70701 is the 'Guild Favor' Id, we don't want to show that
+                            item = Item.objects(item_id = x.item_id).first()
+                            if item is None:
+                                cost_descriptions.append('0/'+ str(x.count) + ' - ' + x.name)
+                            else:
+                                cost_descriptions.append(str(item.count) + '/' + str(x.count) + ' - ' + x.name)
+                    embed_message = discord.Embed(title = up_info.name,colour=3066993,description='\n'.join(cost_descriptions))
+                    embed_message.set_thumbnail(url=up_info.icon)
+                    await message.channel.send(embed=embed_message)
         else:
             msg = await message.channel.send("You don't have the required role for this command! Sorry.")
             await msg.delete(delay=10)
@@ -129,7 +133,11 @@ async def on_message(message):
             else:
                 try:
                     for x in upgrades:
-                        description.append(str(x.up_id) + " - " + x.name)
+                        if x.owned:
+                            content = str(x.up_id) + " - " + x.name + " (Completed)"
+                        else:
+                            content = str(x.up_id) + " - " + x.name
+                        description.append(content)
                     await message.channel.send("``` " + "\n ".join(description) + "```")
                 except:
                     msg = await message.channel.send("A lot of results, please be more precise.")
@@ -182,7 +190,7 @@ async def on_message(message):
                     r_upgrades_message = r_upgrades
             except:
                 msg = await message.channel.send('You should try $upgrades_remaining 0 or $upgrades_remaining 1 !')
-                msg.delete(delay=10)
+                await msg.delete(delay=10)
         else:
             msg = await message.channel.send("You don't have the required role for this command! Sorry.")
             await msg.delete(delay=10)
@@ -499,9 +507,9 @@ def get_upgrade_data():
             request = session.get('https://api.guildwars2.com/v2/guild/upgrades/'+e)
             request_result = request.result()
             e_data = json.loads(request_result.text)
+            print(e_data['id'])
             upgrade = parsingJsonToMongoUpgrade(e_data,False)
             upgrade.save()
-
 
 #Filter type of upgrades query
 def upgrades_filter(type_m):
@@ -509,15 +517,16 @@ def upgrades_filter(type_m):
     if (type_m == '0'): #If 0 search for all not owned upgrades
         upgrades_r = Upgrade.objects(owned=False)[skip:limit]
         for e in upgrades_r:
-            descriptions.append(str(e.up_id) + ' - ' + e.name)
+                descriptions.append(str(e.up_id) + ' - ' + e.name)
     else: #If 1 search for all not owned upgrades, which guild has the requested prerequisites
         owned_upgrades = Upgrade.objects(owned=True)
         itens = []
         for x in owned_upgrades:
             itens.append(x.up_id)
-        upgrades_r = Upgrade.objects(Q(prerequisites__all=itens) | Q(prerequisites=[]) & Q(owned=False))[skip:limit]
+        upgrades_r = Upgrade.objects((Q(prerequisites__in=itens) | Q(prerequisites=[])) & Q(owned=False) & Q(type_o__not__contains="Decoration")
+        & Q(type_o__not__contains="Consumable"))[skip:limit]
         for e in upgrades_r:
-            descriptions.append(str(e.up_id) + ' - ' + e.name)
+                descriptions.append(str(e.up_id) + ' - ' + e.name)
     return descriptions
 
 #Search for required roles

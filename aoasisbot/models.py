@@ -16,6 +16,7 @@ class Upgrade(mongoengine.Document):
     name = mongoengine.StringField()
     icon = mongoengine.StringField()
     owned = mongoengine.BooleanField()
+    type_o = mongoengine.StringField()
     costs = mongoengine.ListField(mongoengine.EmbeddedDocumentField(Cost))
     prerequisites = mongoengine.ListField(mongoengine.IntField())
 

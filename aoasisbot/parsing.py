@@ -21,7 +21,7 @@ def parsingJsonToMongoUpgrade(data,owned):
             item_id_c = 0
         cost_object = Cost(type_doc = type_c ,count = count_c,name= name_c,item_id= item_id_c)
         list_of_costs.append(cost_object)
-    upgrade_object = Upgrade(up_id = data['id'], name = data['name'], icon = data['icon'], costs = list_of_costs, owned = owned, prerequisites = data['prerequisites']) 
+    upgrade_object = Upgrade(up_id = data['id'], name = data['name'], icon = data['icon'], costs = list_of_costs, owned = owned, type_o = data['type'], prerequisites = data['prerequisites']) 
     return upgrade_object
 
 def parsingEventToEventMessage(event, descript_roles):
