@@ -444,7 +444,7 @@ async def on_message(message):
             channel = client.get_channel(int(channel_id))
 
             try:
-                await channel.send("``` USERNAME: " + username + " \n Meta: " + meta + "\n Why? " + why
+                await channel.send("<@&716046487557242881>\n" + "``` USERNAME: " + username + " \n Meta: " + meta + "\n Why? " + why
                 + "\n Commander Tag: " + commander_tag + "```")
                 success_msg = await message.channel.send(message.author.mention + "Application received! Please allow 4-6 hours for a reply.")
                 await success_msg.delete(delay=10)
