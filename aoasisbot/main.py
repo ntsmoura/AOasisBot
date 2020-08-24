@@ -20,7 +20,7 @@ connect(os.getenv("MONGO_DB")) #Connection to mongoDB database
 
 guild_id = os.getenv("GUILD_ID")
 access_token = os.getenv("ACCESS_TOKEN")
-bot_token = os.getenv("BOT_TOKEN")
+bot_token = "NzMyMjk4Njk0MjI0OTA0MjMy.XwykTg.IGZpxJGCtnhkSor1KDvmdoi3ChI"
 
 skip = 0 #Global var for determine lower bound of search
 limit = 0 #Global var for determine upper bound of search
