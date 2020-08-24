@@ -207,9 +207,10 @@ async def on_message(message):
             request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/treasury?access_token='+access_token)
             request_result = request.result()
             items = json.loads(request_result.text)
+            print(items)
             Item.drop_collection()
             for e in items:
-                item = (Item.objects(item_id = e['item_id']))[0]
+                item = Item.objects(item_id = e['item_id']).first() 
                 if item is None:
                     db_item = Item(item_id = e['item_id'],count = e['count'])
                     db_item.save()
