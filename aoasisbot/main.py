@@ -174,7 +174,11 @@ async def on_message(message):
             limit = 20
             descriptions=[]
             if r_upgrades_message is not None:
-                await r_upgrades_message.delete()
+
+                try:
+                    await r_upgrades_message.delete()
+                except:
+                    r_upgrades_message = None
             try: 
                 type_m = (message.content.split())[1]
                 if(type_m != '0' and type_m != '1'):
