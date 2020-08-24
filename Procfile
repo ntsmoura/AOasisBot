@@ -1,1 +1,1 @@
-worker: python /aoasisbot/main.py
+worker: python aoasisbot/main.py
