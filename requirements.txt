@@ -1,0 +1,5 @@
+"discord.py"==1.3.4
+requests-futures==1.0.0
+Pymongo==3.10.1
+python-dotenv==0.14.0
+mongoengine=0.20.0
