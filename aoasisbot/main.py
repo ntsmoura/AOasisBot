@@ -151,7 +151,6 @@ async def on_message(message):
     if message.content.startswith('$upgrades_update'):
         if role_search(message.author.roles):
             request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+access_token)   
-            print('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+access_token)
             request_result = request.result()
             upgrades = json.loads(request_result.text)
             for e in upgrades:
