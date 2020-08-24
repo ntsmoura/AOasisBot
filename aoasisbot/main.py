@@ -6,7 +6,6 @@ from models import *
 from mongoengine import *
 from requests_futures.sessions import FuturesSession
 from parsing import *
-from PIL import Image
 import requests
 import os
 import random
@@ -17,7 +16,9 @@ session = FuturesSession() #Session for future requests to GW2 API
 
 client = discord.Client() #Connection do Discord Client
 
-connect(os.getenv("MONGO_DB")) #Connection to mongoDB database
+host = os.getenv('MONGODB_URI')
+
+connect(host=host) #Connection to mongoDB database
 
 guild_id = os.getenv("GUILD_ID")
 access_token = os.getenv("ACCESS_TOKEN")
@@ -43,12 +44,8 @@ async def on_message(message):
     if message.author == client.user: #Avoid bot auto-response
         return
 
-    '''if message.content.startswith('$teste'):
-        roles = message.author.roles
-        if role_search(roles):
-            print("Found!")
-        else:
-            print("Not found!")'''
+    if message.content.startswith('$helloAOasisBot'):
+        await message.channel.send("Hello "+message.author.mention+"!")
 
     #Show help about upgrades
     if message.content.startswith('$upgrades_help'):
@@ -149,7 +146,7 @@ async def on_message(message):
     #Upgrade DB data about earned upgrades
     if message.content.startswith('$upgrades_update'):
         if role_search(message.author.roles):
-            request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+access_token)
+            request = session.get('https://api.guildwars2.com/v2/guild/'+guild_id+'/upgrades?access_token='+access_token)   
             request_result = request.result()
             upgrades = json.loads(request_result.text)
             for e in upgrades:
@@ -448,7 +445,7 @@ async def on_message(message):
             channel = client.get_channel(int(channel_id))
 
             try:
-                await channel.send("``` USERNAME: " + username + " \n Meta: " + meta + "\n Why? " + why
+                await channel.send("<@&716046487557242881>\n" + "``` USERNAME: " + username + " \n Meta: " + meta + "\n Why? " + why
                 + "\n Commander Tag: " + commander_tag + "```")
                 success_msg = await message.channel.send(message.author.mention + "Application received! Please allow 4-6 hours for a reply.")
                 await success_msg.delete(delay=10)
