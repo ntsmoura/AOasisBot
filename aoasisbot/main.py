@@ -6,7 +6,6 @@ from models import *
 from mongoengine import *
 from requests_futures.sessions import FuturesSession
 from parsing import *
-from PIL import Image
 import requests
 import os
 import random
