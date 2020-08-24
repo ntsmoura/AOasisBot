@@ -44,12 +44,8 @@ async def on_message(message):
     if message.author == client.user: #Avoid bot auto-response
         return
 
-    '''if message.content.startswith('$teste'):
-        roles = message.author.roles
-        if role_search(roles):
-            print("Found!")
-        else:
-            print("Not found!")'''
+    if message.content.startswith('$helloAOasisBot'):
+        await message.channel.send("Hello "+message.author.mention+"!")
 
     #Show help about upgrades
     if message.content.startswith('$upgrades_help'):
