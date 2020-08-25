@@ -465,17 +465,18 @@ async def on_reaction_add(reaction,user):
     global limit
     global type_m
     if user!= client.user:
-        r_upgrades_message = reaction.message
-        if reaction.emoji == '➡':
-            skip+=20
-            limit+=20
-        else:
-            if skip>=20:
-                skip-=20
-            if limit>20:
-                limit-=20
-        descriptions = upgrades_filter(type_m)
-        await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
+        if r_upgrades_message == reaction.message:
+            r_upgrades_message = reaction.message
+            if reaction.emoji == '➡':
+                skip+=20
+                limit+=20
+            else:
+                if skip>=20:
+                    skip-=20
+                if limit>20:
+                    limit-=20
+            descriptions = upgrades_filter(type_m)
+            await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
@@ -485,17 +486,17 @@ async def on_reaction_remove(reaction,user):
     global limit
     global type_m
     if user!= client.user:
-        r_upgrades_message = reaction.message
-        if reaction.emoji == '➡':
-            skip+=20
-            limit+=20
-        else:
-            if skip>=20:
-                skip-=20
-            if limit>20:
-                limit-=20
-        descriptions = upgrades_filter(type_m)
-        await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
+        if r_upgrades_message == reaction.message:
+            if reaction.emoji == '➡':
+                skip+=20
+                limit+=20
+            else:
+                if skip>=20:
+                    skip-=20
+                if limit>20:
+                    limit-=20
+            descriptions = upgrades_filter(type_m)
+            await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
 
 #get all data about Upgrades from GW2 API
 def get_upgrade_data():
