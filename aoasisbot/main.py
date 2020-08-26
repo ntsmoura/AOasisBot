@@ -465,7 +465,7 @@ async def on_reaction_add(reaction,user):
     global limit
     global type_m
     if user!= client.user:
-        if (r_upgrades_message.id is not None) and (r_upgrades_message.id == reaction.message.id):
+        if (r_upgrades_message is not None) and (r_upgrades_message.id == reaction.message.id):
             if reaction.emoji == '➡':
                 skip+=20
                 limit+=20
@@ -485,7 +485,7 @@ async def on_reaction_remove(reaction,user):
     global limit
     global type_m
     if user!= client.user:
-        if (r_upgrades_message.id is not None) and (r_upgrades_message.id == reaction.message.id):
+        if (r_upgrades_message is not None) and (r_upgrades_message.id == reaction.message.id):
             if reaction.emoji == '➡':
                 skip+=20
                 limit+=20
