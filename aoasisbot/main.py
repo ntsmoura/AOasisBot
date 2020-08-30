@@ -219,7 +219,7 @@ async def on_message(message):
     #Add events
     if message.content.startswith('$event_add'):
         try:
-            if role_search(message.author.roles):
+            if role_search_asc(message.author.roles):
                 event_data =  message.content.split(" / ")
                 list_participant = []
                 count = 0
@@ -294,7 +294,7 @@ async def on_message(message):
 
     #Remove event and delete its Discord message
     if message.content.startswith("$remove_event"):
-        if role_search(message.author.roles):
+        if role_search_asc(message.author.roles):
             try:
                 code = message.content.split()[1]
             except IndexError:
@@ -317,7 +317,7 @@ async def on_message(message):
     
     #Remove user from any event
     if message.content.startswith("$remove_user"):
-        if role_search(message.author.roles):
+        if role_search_asc(message.author.roles):
             splited_message = message.content.split()
             try:
                 code = splited_message[1]
@@ -351,7 +351,7 @@ async def on_message(message):
 
     #Edit selected content of event (Name, Description, Date/Time)
     if message.content.startswith('$edit_event'):
-        if role_search(message.author.roles):
+        if role_search_asc(message.author.roles):
             try:
                 msg = message.content.split(" / ")
                 code = (msg[0].split())[1] #Remove $edit_event from string
@@ -390,7 +390,7 @@ async def on_message(message):
 
     #Add Joke
     if message.content.startswith('$joke_add'):
-        if role_search_jokes(message.author.roles):
+        if role_search_asc(message.author.roles):
                 msg = message.content[9:]
                 joke = Joke(descript = msg)
                 joke.save()
@@ -403,7 +403,7 @@ async def on_message(message):
 
     #Retrieve joke
     if message.content == '$joke':
-        if role_search_jokes(message.author.roles):
+        if role_search_asc(message.author.roles):
             await message.delete() 
             jokes = Joke.objects()
             if len(jokes) == 0:
@@ -420,7 +420,7 @@ async def on_message(message):
 
     #Setting the Channel for Application Answers
     if message.content.startswith('$set_apply_channel'):
-        if role_search_jokes(message.author.roles):
+        if role_search_asc(message.author.roles):
             try:
                 global channel_id 
                 channel_id = message.content.split()[1].strip("<#>")
@@ -539,7 +539,7 @@ def role_search(roles):
     return False
 
 #Search for required roles
-def role_search_jokes(roles):
+def role_search_asc(roles):
     for x in roles:
         if x.name == "Exalted" or x.name=="Ascended":
             return True
