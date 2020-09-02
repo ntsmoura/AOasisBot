@@ -26,15 +26,17 @@ def parsingJsonToMongoUpgrade(data,owned):
 
 def parsingEventToEventMessage(event, descript_roles):
     count = 0
+    total = 0
     emoji = ""
     spots_message = ""
     for x in event.subscribeds:
         if x.nick != " ":
             count+=1
-    if count < 7:
+        total+=1
+    if count < total*0.7:
         emoji = "🟩"
         spots_message = str(int(event.spots) - count) + " left!"
-    elif count >= 7 and count < 10:
+    elif count >= total*0.7 and count < total:
         emoji = "🟨"
         spots_message = str(int(event.spots) - count) + " left!"
     else:
