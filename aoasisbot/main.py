@@ -9,6 +9,7 @@ from parsing import *
 import requests
 import os
 import random
+import dns
 
 load_dotenv()
 
