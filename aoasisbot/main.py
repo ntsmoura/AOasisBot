@@ -29,7 +29,7 @@ skip = 0 #Global var for determine lower bound of search
 limit = 0 #Global var for determine upper bound of search
 r_upgrades_message = None #Global var which carries the last upgrades_remaining message object
 type_m = '0' #Global var for determine type of search
-channel_id = None  #Global var for application for guild invite channel id
+channel_id = None  #Global var for application for guild invite channel id﻿
 
 #Debug for confirm connection to Discord client
 @client.event
@@ -477,6 +477,15 @@ async def on_reaction_add(reaction,user):
                     limit-=20
             descriptions = upgrades_filter(type_m)
             await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
+
+#wait for reactions and give the role "trader" to who did the reaction
+@client.event
+async def on_raw_reaction_add(payload): 
+    if(payload.message_id == 765368156969500753 and payload.emoji.id==623714599245709312):
+        channel = client.get_channel(payload.channel_id)
+        member = payload.member
+        await member.add_roles(discord.utils.get(member.guild.roles, name="Trader"))
+        
 
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
