@@ -478,15 +478,44 @@ async def on_reaction_add(reaction,user):
             descriptions = upgrades_filter(type_m)
             await r_upgrades_message.edit(content="``` " + "\n ".join(descriptions) + "```")
 
-#wait for reactions and give the role "trader" to who did the reaction
+#wait for reactions and give roles to who did the reaction
 @client.event
 async def on_raw_reaction_add(payload): 
     if(payload.message_id == 765368156969500753 and payload.emoji.id==623714599245709312):
-        channel = client.get_channel(payload.channel_id)
         member = payload.member
         await member.add_roles(discord.utils.get(member.guild.roles, name="Trader"))
-        
+    elif(payload.message_id == 806937246065229835):
+        member = payload.member 
+        if(payload.emoji.id==806641781189115955):
+            role = "Raids"
+        elif(payload.emoji.id==806641781223456768):
+            role = "Strikes"
+        elif(payload.emoji.id==806641781176401961):
+            role = "T1-3 Fractals"
+        elif(payload.emoji.id==806641781089239111):
+            role = "T4 Fractals"
+        elif(payload.emoji.id==806641780892106763):
+            role = "Dungeons"
+        await member.add_roles(discord.utils.get(member.guild.roles, name=role)) 
 
+#wait for unreactions and remove roles from who removed the reaction
+@client.event
+async def on_raw_reaction_remove(payload): 
+    if(payload.message_id == 806937246065229835):
+        guild = await client.fetch_guild(payload.guild_id)
+        member = await guild.fetch_member(payload.user_id) 
+        if(payload.emoji.id==806641781189115955):
+            role = "Raids"
+        elif(payload.emoji.id==806641781223456768):
+            role = "Strikes"
+        elif(payload.emoji.id==806641781176401961):
+            role = "T1-3 Fractals"
+        elif(payload.emoji.id==806641781089239111):
+            role = "T4 Fractals"
+        elif(payload.emoji.id==806641780892106763):
+            role = "Dungeons"
+        await member.remove_roles(discord.utils.get(member.guild.roles, name=role))
+            
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
 async def on_reaction_remove(reaction,user):
