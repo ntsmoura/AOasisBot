@@ -491,8 +491,6 @@ def role_id_selection(id):
             role = "T4 Fractals"
     elif(id==806641780892106763):
             role = "Dungeons"
-    elif(id==770289253065162763):
-            role = "Extra AO Gaming"
     return role
 
 #wait for reactions and give roles to who did the reaction
@@ -504,6 +502,8 @@ async def on_raw_reaction_add(payload):
     elif(payload.message_id == 806937246065229835):
         member = payload.member 
         role = role_id_selection(payload.emoji.id)
+        if(role=="" and payload.emoji.name == "🎮"):
+            role = "Extra AO Gaming"
         if(role!=""):
             await member.add_roles(discord.utils.get(member.guild.roles, name=role)) 
 
@@ -516,6 +516,8 @@ async def on_raw_reaction_remove(payload):
         guild = await client.fetch_guild(payload.guild_id)
         member = await guild.fetch_member(payload.user_id) 
         role = role_id_selection(payload.emoji.id)
+        if(role=="" and payload.emoji.name == "🎮"):
+            role = "Extra AO Gaming"
         if(role!=""):
             await member.remove_roles(discord.utils.get(member.guild.roles, name=role))
             
