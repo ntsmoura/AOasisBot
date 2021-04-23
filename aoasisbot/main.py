@@ -491,7 +491,7 @@ def role_id_selection(id):
             role = "T4 Fractals"
     elif(id==806641780892106763):
             role = "Dungeons"
-    elif(id==835243227489632257):
+    elif(id==770289253065162763):
             role = "Extra AO Gaming"
     return role
 
