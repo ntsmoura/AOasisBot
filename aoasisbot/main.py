@@ -506,6 +506,11 @@ async def on_raw_reaction_add(payload):
             role = "Extra AO Gaming"
         if(role!=""):
             await member.add_roles(discord.utils.get(member.guild.roles, name=role)) 
+    elif(payload.message_id == 853511617772650497 and payload.emoji.name == "👍"):
+        member = payload.member
+        await member.add_roles(discord.utils.get(member.guild.roles, name="AO Commander")) 
+
+    
 
 
 
@@ -520,6 +525,12 @@ async def on_raw_reaction_remove(payload):
             role = "Extra AO Gaming"
         if(role!=""):
             await member.remove_roles(discord.utils.get(member.guild.roles, name=role))
+    elif (payload.message_id == 853511617772650497 and payload.emoji.name == "👍"):
+        guild = await client.fetch_guild(payload.guild_id)
+        member = await guild.fetch_member(payload.user_id) 
+        await member.remove_roles(discord.utils.get(member.guild.roles, name="AO Commander"))
+        
+
             
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
