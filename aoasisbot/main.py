@@ -596,7 +596,7 @@ def role_search(roles):
 #Search for required roles
 def role_search_asc(roles):
     for x in roles:
-        if x.name == "Exalted" or x.name=="Ascended":
+        if x.name == "Exalted-origin" or x.name=="Ascended-origin":
             return True
     return False
 
