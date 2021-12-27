@@ -589,7 +589,7 @@ def upgrades_filter(type_m):
 #Search for required roles
 def role_search(roles):
     for x in roles:
-        if x.name == "Exalted":
+        if x.name == "Exalted-origin"
             return True
     return False
 
