@@ -499,7 +499,7 @@ async def on_raw_reaction_add(payload):
     if(payload.message_id == 765368156969500753 and payload.emoji.id==623714599245709312):
         member = payload.member
         await member.add_roles(discord.utils.get(member.guild.roles, name="Trader"))
-    elif(payload.message_id == 806937246065229835):
+    elif(payload.message_id == 956689338232606722):
         member = payload.member 
         role = role_id_selection(payload.emoji.id)
         if(role=="" and payload.emoji.name == "🎮"):
@@ -517,7 +517,7 @@ async def on_raw_reaction_add(payload):
 #wait for unreactions and remove roles from who removed the reaction
 @client.event
 async def on_raw_reaction_remove(payload): 
-    if(payload.message_id == 806937246065229835):
+    if(payload.message_id == 956689338232606722):
         guild = await client.fetch_guild(payload.guild_id)
         member = await guild.fetch_member(payload.user_id) 
         role = role_id_selection(payload.emoji.id)
