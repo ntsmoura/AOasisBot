@@ -35,6 +35,7 @@ channel_id = None  #Global var for application for guild invite channel id﻿
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
+
     get_upgrade_data()
     #await channel.send("Hello everyone i'm AOasis bot, i'll be glad if can help you sometime! Type $help for more info about me!")
 
@@ -458,6 +459,11 @@ async def on_message(message):
             await error_msg.delete(delay=10)
         await message.delete(delay = 10)
 
+    if message.content.startswith('$react'):
+        react_message = await message.channel.fetch_message(976566316490174525)
+        await react_message.add_reaction('\U00002757')
+
+
 #Wait for reactions and edit the upgrades_remaining content based on which reaction was selected
 @client.event
 async def on_reaction_add(reaction,user):
@@ -496,19 +502,21 @@ def role_id_selection(id):
 #wait for reactions and give roles to who did the reaction
 @client.event
 async def on_raw_reaction_add(payload): 
+    role_name = ""
+    member = payload.member
     if(payload.message_id == 765368156969500753 and payload.emoji.id==623714599245709312):
-        member = payload.member
-        await member.add_roles(discord.utils.get(member.guild.roles, name="Trader"))
+        role_name="Trader"
     elif(payload.message_id == 956689338232606722):
-        member = payload.member 
         role = role_id_selection(payload.emoji.id)
         if(role=="" and payload.emoji.name == "🎮"):
             role = "Extra AO Gaming"
-        if(role!=""):
-            await member.add_roles(discord.utils.get(member.guild.roles, name=role)) 
+        role_name = role
     elif(payload.message_id == 853511617772650497 and payload.emoji.name == "👍"):
-        member = payload.member
-        await member.add_roles(discord.utils.get(member.guild.roles, name="AO Commander")) 
+        role_name = "AO Commander"
+    elif(payload.message_id == 976566316490174525 and payload.emoji.name == "❗"):
+        role_name = "Ping me for Events!"
+    if(role_name!=""):
+        await member.add_roles(discord.utils.get(member.guild.roles, name=role_name)) 
 
     
 
@@ -517,18 +525,20 @@ async def on_raw_reaction_add(payload):
 #wait for unreactions and remove roles from who removed the reaction
 @client.event
 async def on_raw_reaction_remove(payload): 
+    role_name = ""
+    guild = await client.fetch_guild(payload.guild_id)
+    member = await guild.fetch_member(payload.user_id) 
     if(payload.message_id == 956689338232606722):
-        guild = await client.fetch_guild(payload.guild_id)
-        member = await guild.fetch_member(payload.user_id) 
         role = role_id_selection(payload.emoji.id)
         if(role=="" and payload.emoji.name == "🎮"):
             role = "Extra AO Gaming"
-        if(role!=""):
-            await member.remove_roles(discord.utils.get(member.guild.roles, name=role))
+        role_name = role
     elif (payload.message_id == 853511617772650497 and payload.emoji.name == "👍"):
-        guild = await client.fetch_guild(payload.guild_id)
-        member = await guild.fetch_member(payload.user_id) 
-        await member.remove_roles(discord.utils.get(member.guild.roles, name="AO Commander"))
+        role_name = "AO Commander"
+    elif(payload.message_id == 976566316490174525 and payload.emoji.name == "❗"):
+        role_name = "Ping me for Events!"
+    if(role_name!=""):
+        await member.remove_roles(discord.utils.get(member.guild.roles, name=role_name))
         
 
             
