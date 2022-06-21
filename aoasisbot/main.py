@@ -24,6 +24,8 @@ connect(host=host) #Connection to mongoDB database
 guild_id = os.getenv("GUILD_ID")
 access_token = os.getenv("ACCESS_TOKEN")
 bot_token = os.getenv("BOT_TOKEN")
+ascended_role = os.getenv("ASCENDED_ROLE_NAME")
+exalted_role = os.getenv("EXALTED_ROLE_NAME")
 
 skip = 0 #Global var for determine lower bound of search
 limit = 0 #Global var for determine upper bound of search
@@ -599,14 +601,14 @@ def upgrades_filter(type_m):
 #Search for required roles
 def role_search(roles):
     for x in roles:
-        if x.name == "Exalted-origin":
+        if x.name == exalted_role:
             return True
     return False
 
 #Search for required roles
 def role_search_asc(roles):
     for x in roles:
-        if x.name == "Exalted-origin" or x.name=="Ascended-origin":
+        if x.name == exalted_role or x.name==ascended_role:
             return True
     return False
 
