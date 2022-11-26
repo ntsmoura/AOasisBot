@@ -1,4 +1,5 @@
 #Main.py
+import logging
 import discord
 import json
 from dotenv import load_dotenv
@@ -501,46 +502,46 @@ def role_id_selection(id):
             role = "Dungeons"
     return role
 
-#wait for reactions and give roles to who did the reaction
-@client.event
-async def on_raw_reaction_add(payload): 
-    role_name = ""
-    member = payload.member
+def select_role_name_by_payload(payload):
+    role_name=""
     if(payload.message_id == 765368156969500753 and payload.emoji.id==623714599245709312):
         role_name="Trader"
-    elif(payload.message_id == 956689338232606722):
+    elif(payload.message_id == 1046158034231107726):
         role = role_id_selection(payload.emoji.id)
-        if(role=="" and payload.emoji.name == "🎮"):
-            role = "Extra AO Gaming"
+        if(role==""):
+            if payload.emoji.name == "🎮":
+                role = "Extra AO Gaming"
+            elif payload.emoji.name == "🕹️":
+                role = "Raid Training"
+            elif payload.emoji.name == "🎳":
+                role = "Strike Training"
+            elif payload.emoji.name == "🌠":
+                role = "Fractal Training"
         role_name = role
     elif(payload.message_id == 853511617772650497 and payload.emoji.name == "👍"):
         role_name = "AO Commander"
-    elif(payload.message_id == 976566316490174525 and payload.emoji.name == "❗"):
+    elif(payload.message_id == 1046158423118594169 and payload.emoji.name == "❗"):
         role_name = "Ping me for Events!"
+    return role_name
+
+#wait for reactions and give roles to who did the reaction
+@client.event
+async def on_raw_reaction_add(payload): 
+    role_name = select_role_name_by_payload(payload)
+    member = payload.member
     if(role_name!=""):
         await member.add_roles(discord.utils.get(member.guild.roles, name=role_name)) 
-
-    
-
-
+        logging.log(msg=f"Role:{role_name} added to:{member.name}", level=logging.INFO)
 
 #wait for unreactions and remove roles from who removed the reaction
 @client.event
 async def on_raw_reaction_remove(payload): 
-    role_name = ""
+    role_name = select_role_name_by_payload(payload)
     guild = await client.fetch_guild(payload.guild_id)
     member = await guild.fetch_member(payload.user_id) 
-    if(payload.message_id == 956689338232606722):
-        role = role_id_selection(payload.emoji.id)
-        if(role=="" and payload.emoji.name == "🎮"):
-            role = "Extra AO Gaming"
-        role_name = role
-    elif (payload.message_id == 853511617772650497 and payload.emoji.name == "👍"):
-        role_name = "AO Commander"
-    elif(payload.message_id == 976566316490174525 and payload.emoji.name == "❗"):
-        role_name = "Ping me for Events!"
     if(role_name!=""):
         await member.remove_roles(discord.utils.get(member.guild.roles, name=role_name))
+        logging.log(msg=f"Role:{role_name} removed from:{member.name}", level=logging.INFO)
         
 
             
