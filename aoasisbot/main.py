@@ -41,7 +41,7 @@ channel_id = None  # Global var for application for guild invite channel id﻿
 async def on_ready():
     print("We have logged in as {0.user}".format(client))
 
-    get_upgrade_data()
+    # get_upgrade_data()
     # await channel.send("Hello everyone i'm AOasis bot, i'll be glad if can help you sometime! Type $help for more info about me!")
 
 
@@ -747,7 +747,7 @@ def role_search(roles, ascended_allowed=False):
 
     allowed_roles = [exalted_role] if not ascended_allowed else [exalted_role, ascended_role]
 
-    return any(role in allowed_roles for role in roles)
+    return any(role.name in allowed_roles for role in roles)
 
 
 # Get list of spots from event
