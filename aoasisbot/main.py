@@ -252,7 +252,7 @@ async def on_message(message):
     # Add events
     if message.content.startswith("$event_add"):
         try:
-            if role_search_asc(message.author.roles):
+            if role_search(message.author.roles, ascended_allowed=True):
                 event_data = message.content.split(" / ")
                 list_participant = []
                 count = 0
@@ -339,7 +339,7 @@ async def on_message(message):
 
     # Remove event and delete its Discord message
     if message.content.startswith("$remove_event"):
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             try:
                 code = message.content.split()[1]
             except IndexError:
@@ -362,7 +362,7 @@ async def on_message(message):
 
     # Remove user from any event
     if message.content.startswith("$remove_user"):
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             splited_message = message.content.split()
             try:
                 code = splited_message[1]
@@ -396,7 +396,7 @@ async def on_message(message):
 
     # Edit selected content of event (Name, Description, Date/Time)
     if message.content.startswith("$edit_event"):
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             try:
                 msg = message.content.split(" / ")
                 code = (msg[0].split())[1]  # Remove $edit_event from string
@@ -436,7 +436,7 @@ async def on_message(message):
         await message.delete(delay=10)
 
     if message.content == "$jokes":
-        if role_search(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             skip = 0
             limit = 20
 
@@ -464,7 +464,7 @@ async def on_message(message):
 
     # Add Joke
     if message.content.startswith("$joke_add"):
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             msg = message.content[9:]
             joke = Joke(descript=msg)
             joke.save()
@@ -477,7 +477,7 @@ async def on_message(message):
 
     # Remove Joke
     if message.content.startswith("$joke_remove"):
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             try:
                 joke_id = message.content.split()[1]
             except IndexError:
@@ -497,7 +497,7 @@ async def on_message(message):
 
     # Retrieve joke
     if message.content == "$joke":
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             await message.delete()
             jokes = Joke.objects()
             if len(jokes) == 0:
@@ -514,7 +514,7 @@ async def on_message(message):
 
     # Setting the Channel for Application Answers
     if message.content.startswith("$set_apply_channel"):
-        if role_search_asc(message.author.roles):
+        if role_search(message.author.roles, ascended_allowed=True):
             try:
                 global channel_id
                 channel_id = message.content.split()[1].strip("<#>")
@@ -743,19 +743,11 @@ def upgrades_filter(type_m):
 
 
 # Search for required roles
-def role_search(roles):
-    for x in roles:
-        if x.name == exalted_role:
-            return True
-    return False
+def role_search(roles, ascended_allowed=False):
 
+    allowed_roles = [exalted_role] if not ascended_allowed else [exalted_role, ascended_role]
 
-# Search for required roles
-def role_search_asc(roles):
-    for x in roles:
-        if x.name == exalted_role or x.name == ascended_role:
-            return True
-    return False
+    return any(role in allowed_roles for role in roles)
 
 
 # Get list of spots from event
